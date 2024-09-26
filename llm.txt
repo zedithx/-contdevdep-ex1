@@ -1,0 +1,8 @@
+I utilised Chatgpt
+I used Chatgpt as I felt that it could better help explain things in a better manner that is catered towards me.
+While I balanced usage of online material to give me base templates of dockerfiles/docker-compose, I used gpt to explain how each line worked 
+and whether a line was necessary. As I had not written a docker-compose before, it proved to be useful as it allowed me to adapt the docker-compose
+from others and change it into my use containers
+Some mistakes that chatgpt did was giving me the wrong code syntax or library, such as telling me to use django contrib's request import, which
+was clearly wrong. However, generally, with good prior coding knowledge, it was easy to spot these mistakes and adapt all of Chatgpt answers. By
+asking the right questions, ChatGPT provided me everything needed to do the assignment and also understand what I am even doing thoroughly

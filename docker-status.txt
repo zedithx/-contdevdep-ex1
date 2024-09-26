@@ -1,0 +1,8 @@
+CONTAINER ID   IMAGE                     COMMAND               CREATED         STATUS         PORTS                    NAMES
+ed20f0c0f81e   contdevdep-ex1-service1   "python service.py"   4 minutes ago   Up 4 minutes   0.0.0.0:8199->8199/tcp   contdevdep-ex1-service1-1
+cab1f4e84759   contdevdep-ex1-service2   "ruby service.rb"     4 minutes ago   Up 4 minutes   8080/tcp                 contdevdep-ex1-service2-1
+NETWORK ID     NAME                     DRIVER    SCOPE
+589a14b91562   bridge                   bridge    local
+ebc5d5fb4afc   contdevdep-ex1_default   bridge    local
+6de5f430880b   host                     host      local
+fecf22cc0fc6   none                     null      local
