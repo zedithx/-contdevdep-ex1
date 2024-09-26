@@ -1,0 +1,5 @@
+I found that the containers share the same diskspace and time since last boot. This is because they are in the same container, hence they share the same diskspace
+The time since last boot is also the same as service 1 is made to be dependent on service 2 in the docker compose, hence they will start and stop at the same time.
+The rest is different as the two services sit in their own containers of different ip addresses. We only expose service 1 as a http-server on 8199 publicly, and service 2 on port 8080 is kept hidden publicly.
+We do not map the exposed port to the overall docker compose port, such that, it is only exposed to the service 1 container for access. We can see in the docker-status.txt that the port has been forwarded in service 1 but
+not service2. 

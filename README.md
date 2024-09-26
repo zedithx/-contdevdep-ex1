@@ -1,1 +1,2 @@
-# -contdevdep-ex1
+# Continuous Development and Deployment Exercise 1
+<h3> Apparently this is the hardest course in software engineering in Tampere University and its for final year master students, but here I am in my bachelor 3rd year :)</h3>
