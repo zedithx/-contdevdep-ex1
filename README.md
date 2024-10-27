@@ -4,8 +4,9 @@ This project consists of two services running in separate Docker containers that
 
 ## Project Structure
 
-- **Service 1**: Exposed as a public HTTP server on port `8199`, collects and exposes its own container information as well as data from Service 2.
+- **Service 1**: Hidden HTTP server on port `8199`, collects and exposes its own container information as well as data from Service 2 to the Nginx Webserver.
 - **Service 2**: Runs privately within the Docker network and provides its container information to Service 1 when requested.
+- **Nginx Service**: Acts as a webserver on the exposed port `8081` 
 
 ### Features
 
@@ -16,12 +17,18 @@ This project consists of two services running in separate Docker containers that
   - **Time Since Last Boot** (`uptime -p`)
   
 - **Service 1**:
-  - Runs an HTTP server on port `8199` to serve its own container data.
+  - 3 Instances to be load balanced
+  - Runs a HTTP server on inner port `8199` to serve its own container data.
   - Requests and displays information from **Service 2**.
   
 - **Service 2**:
   - Collects the same container information but is only accessible by **Service 1** over an internal network.
   - Does not expose any public port.
+
+- **Nginx Service**:
+  - Starts webserver on port 8081
+  - Retrieves data from appropriate service 1 in round robin fashion on "REQUEST" button 
+  - Shuts down system and containers on the "STOP" button
 
 ## Prerequisites
 
@@ -29,6 +36,9 @@ This project consists of two services running in separate Docker containers that
 - Basic understanding of Docker, containers, and HTTP.
 
 ## Setup
+
+username: user1
+password: Password1
 
 1. **Clone the repository**:
    ```bash
