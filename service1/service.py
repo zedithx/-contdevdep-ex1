@@ -1,3 +1,4 @@
+import time
 from http.server import SimpleHTTPRequestHandler, HTTPServer
 
 import requests
@@ -28,6 +29,7 @@ class MyHandler(SimpleHTTPRequestHandler):
         # Write the response body
         response_content = f"Service 1\n{response_data}\nService 2\n{service2_resp}"
         self.wfile.write(response_content.encode("utf-8"))  # Send the response
+        time.sleep(2)
 
 
 # Define the server address and port
