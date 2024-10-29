@@ -7,6 +7,6 @@ function sendRequest() {
 }
 
 function stopContainers() {
-    fetch('/stop', { method: 'POST' })
+    fetch('/stop')
         .then(() => alert('System is stopping.'));
 }

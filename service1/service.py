@@ -9,6 +9,16 @@ from http.server import SimpleHTTPRequestHandler, HTTPServer
 import requests
 import subprocess
 
+import logging
+
+# Configure logging
+logging.basicConfig(
+    filename='app.log',               # Log file name
+    filemode='a',                      # Append mode (use 'w' to overwrite each time)
+    format='%(asctime)s - %(levelname)s - %(message)s',  # Log format
+    level=logging.INFO                 # Log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+)
+
 class MyHandler(SimpleHTTPRequestHandler):
     def do_GET(self):
         if self.path == '/request':
@@ -46,11 +56,9 @@ class MyHandler(SimpleHTTPRequestHandler):
         self.wfile.write(response_content.encode("utf-8"))  # Send the response
         time.sleep(2)
 
-    def delayed_shutdown(self):
-        print("Waiting for 5 seconds before shutting down the current instance...")
-        time.sleep(5)  # Delay to ensure cleanup completes
-        print("Shutting down the current instance.")
-        sys.exit(0)  # Exit the script, stopping the current container
+    def delayed_self_shutdown(self, container_id):
+        # Run the script to stop and remove the container after a delay
+        subprocess.Popen(["./stop_self.sh", container_id])
 
     def handle_stop(self):
         # Send response to client indicating that shutdown is in progress
@@ -61,6 +69,7 @@ class MyHandler(SimpleHTTPRequestHandler):
 
         try:
             client = docker.from_env()
+            last_container_id = None
 
             # Get the hostname or IP of the current container to identify it
             current_instance = socket.gethostname()
@@ -69,17 +78,13 @@ class MyHandler(SimpleHTTPRequestHandler):
             # Stop and remove all containers except the current instance
             for container in client.containers.list():
                 if "service1" in container.name and container.attrs['Config']['Hostname'] == current_instance:
+                    last_container_id = container.id
                     continue
+                else:
+                    container.stop()
+                    container.remove()
 
-                container.stop()
-                container.remove()
-
-            for container in client.containers.list():
-                container.stop()
-                container.remove()
-            print("All other containers and networks have been pruned.")
-            # Schedule the shutdown in a separate thread
-            shutdown_thread = threading.Thread(target=self.delayed_shutdown)
+            shutdown_thread = threading.Thread(target=self.delayed_self_shutdown(last_container_id))
             shutdown_thread.start()
 
         except Exception as e:
