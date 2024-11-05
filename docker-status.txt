@@ -1,5 +1,5 @@
 CONTAINER ID   IMAGE                     COMMAND                  CREATED              STATUS              PORTS                            NAMES
-8a02100223d1   nginx:latest              "/docker-entrypoint.…"   About a minute ago   Up About a minute   80/tcp, 0.0.0.0:8081->8081/tcp   contdevdep-ex1-gateway-1
+8a02100223d1   nginx:latest              "/docker-entrypoint.…"   About a minute ago   Up About a minute   80/tcp, 0.0.0.0:8198->8198/tcp   contdevdep-ex1-gateway-1
 206cef14ef0e   contdevdep-ex1-service1   "python service.py"      About a minute ago   Up About a minute   8199/tcp                         contdevdep-ex1-service1-1
 ab93b27debcc   contdevdep-ex1-service1   "python service.py"      About a minute ago   Up About a minute   8199/tcp                         contdevdep-ex1-service1-3
 eb459daf75ad   contdevdep-ex1-service1   "python service.py"      About a minute ago   Up About a minute   8199/tcp                         contdevdep-ex1-service1-2
