@@ -11,7 +11,7 @@ job_build:
 job_test:
   stage: tests
   dependencies:
-    - build
+    - job_build
   script:
     - echo "Testing application"
     - docker-compose up -d
@@ -26,4 +26,4 @@ job_deploy:
   script:
     - echo "Deploying to production environment"
 #    SSH into EC2/cloud instance
-    - docker-compose up -d
+#    - docker-compose up -d
