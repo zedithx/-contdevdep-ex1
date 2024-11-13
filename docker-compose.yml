@@ -6,7 +6,7 @@ services:
       - ./nginx/htpasswd:/etc/nginx/.htpasswd
       - ./web:/usr/share/nginx/html
     ports:
-      - "8198:8198"
+      - "8197:8197"
     depends_on:
       - service1
       - service2
