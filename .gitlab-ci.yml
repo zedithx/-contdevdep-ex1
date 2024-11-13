@@ -1,6 +1,6 @@
 stages:
   - build
-  - test
+  - tests
   - deploy
 
 job_build:
@@ -9,13 +9,13 @@ job_build:
     - docker-compose build
 
 job_test:
-  stage: test
+  stage: tests
   dependencies:
     - build
   script:
     - echo "Testing application"
     - docker-compose up -d
-# Backend testing for both ruby and python
+    - pytest
   after_script:
     - docker-compose down
 
