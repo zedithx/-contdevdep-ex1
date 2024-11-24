@@ -1,100 +1,149 @@
+import requests
+from flask import Flask, request, jsonify
+import logging
+import docker
+import subprocess
 import socket
 import threading
-
-import docker
 import time
-from http.server import SimpleHTTPRequestHandler, HTTPServer
 
-import requests
-import subprocess
-
-import logging
+# Initialize Flask app
+app = Flask(__name__)
 
 # Configure logging
 logging.basicConfig(
-    filename='app.log',               # Log file name
-    filemode='a',                      # Append mode (use 'w' to overwrite each time)
-    format='%(asctime)s - %(levelname)s - %(message)s',  # Log format
-    level=logging.INFO                 # Log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+    filename='status.log',
+    filemode='a',
+    format='%(asctime)s: %(message)s',
+    level=logging.INFO
 )
 
-class MyHandler(SimpleHTTPRequestHandler):
-    def do_GET(self):
-        if self.path == '/request':
-            self.handle_request()
-        elif self.path == '/stop':
-            self.handle_stop()
-        else:
-            self.send_response(404)
-            self.end_headers()
-            self.wfile.write(b"Not Found")
+# Global state
+state = "INIT"
+state_log = []
+logged_in = False
 
-    def handle_request(self):
-        # Define the response code and headers
-        resp = requests.get('http://service2:8080/')
-        service2_resp = resp.text
+
+@app.route('/state', methods=['PUT'])
+def update_state():
+    global state, state_log
+
+    # Read the new state from the request body
+    new_state = request.data.decode('utf-8')
+    logging.info(f"Received state change request: {new_state}")
+
+    # Validate the new state
+    if new_state not in ["INIT", "PAUSED", "RUNNING", "SHUTDOWN"]:
+        return jsonify({"error": "Invalid state"}), 400
+
+    # Update the state
+    if new_state != state:
+        state_log.append(f"{state} -> {new_state}")
+        logging.info(f"State transition: {state} -> {new_state}")
+        state = new_state
+
+        # Handle state-specific actions
+        if new_state == "SHUTDOWN":
+            handle_stop()
+        elif new_state == "INIT":
+            reset_to_initial()
+
+        return jsonify({"message": f"State updated to {state}"}), 200
+    else:
+        return jsonify({"message": "No change in state"}), 200
+
+
+@app.route('/state', methods=['GET'])
+def get_state():
+    """
+    GET /state
+    Returns the current state.
+    """
+    return jsonify({"state": state}), 200
+
+
+@app.route('/run-log', methods=['GET'])
+def get_run_log():
+    """
+    GET /run-log
+    Returns the state transition log.
+    """
+    return jsonify({"log": state_log}), 200
+
+
+@app.route('/request', methods=['GET'])
+def handle_request():
+    """
+    GET /request
+    Simulates a request to fetch system details and information from another service.
+    """
+    try:
+        # Simulate a request to another service
+        service2_response = requests.get('http://service2:8080/').text
+
+        # Gather system information
         processes = subprocess.check_output("ps -ax", shell=True).decode("utf-8")
-        disk_space_output = subprocess.check_output("df -h /", shell=True).decode("utf-8")
-        lines = disk_space_output.splitlines()
-        columns = lines[1].split()
-        disk_space = columns[3]
-        uptime = " ".join(subprocess.check_output("uptime -p", shell=True).decode("utf-8").split()[1:])
+        disk_space = subprocess.check_output("df -h /", shell=True).decode("utf-8").splitlines()[1].split()[3]
+        uptime = subprocess.check_output("uptime -p", shell=True).decode("utf-8").strip()
         container_ip = subprocess.check_output("hostname -I", shell=True).decode("utf-8").strip()
 
-        # Create a plain text response
-        response_data = f"IP Address: {container_ip}\n" \
-                        f"Processes:\n{processes}" \
-                        f"Disk Space: {disk_space}\n" \
-                        f"Time since last boot: {uptime}\n"
-        self.send_response(200)  # 200 OK status
-        self.send_header("Content-type", "text/plain")  # Content type header
-        self.end_headers()
+        response_data = {
+            "Service 1": {
+                "IP Address": container_ip,
+                "Processes": processes,
+                "Disk Space": disk_space,
+                "Uptime": uptime
+            },
+            "Service 2": service2_response
+        }
+        return jsonify(response_data), 200
+    except Exception as e:
+        logging.error(f"Error in /request: {str(e)}")
+        return jsonify({"error": "Failed to fetch data"}), 500
 
-        # Write the response body
-        response_content = f"Service 1\n{response_data}\nService 2\n{service2_resp}"
-        self.wfile.write(response_content.encode("utf-8"))  # Send the response
-        time.sleep(2)
 
-    def delayed_self_shutdown(self, container_id):
-        # Run the script to stop and remove the container after a delay
-        subprocess.Popen(["./stop_self.sh", container_id])
+def handle_stop():
+    """
+    Shuts down all containers except the current one.
+    """
+    logging.info("Handling system shutdown...")
+    try:
+        client = docker.from_env()
+        current_instance = socket.gethostname()
+        last_container_id = None
 
-    def handle_stop(self):
-        # Send response to client indicating that shutdown is in progress
-        self.send_response(200)
-        self.send_header("Content-type", "text/plain")
-        self.end_headers()
-        self.wfile.write(b"Containers all shutdown")
+        for container in client.containers.list():
+            if "service1" in container.name and container.attrs['Config']['Hostname'] == current_instance:
+                last_container_id = container.id
+                continue
+            else:
+                container.stop()
+                container.remove()
 
-        try:
-            client = docker.from_env()
-            last_container_id = None
+        # Schedule self-shutdown
+        threading.Thread(target=delayed_self_shutdown, args=(last_container_id,)).start()
+        logging.info("Containers shut down.")
+    except Exception as e:
+        logging.error(f"Error during shutdown: {str(e)}")
 
-            # Get the hostname or IP of the current container to identify it
-            current_instance = socket.gethostname()
-            print(f"Current instance ID: {current_instance}")
 
-            # Stop and remove all containers except the current instance
-            for container in client.containers.list():
-                if "service1" in container.name and container.attrs['Config']['Hostname'] == current_instance:
-                    last_container_id = container.id
-                    continue
-                else:
-                    container.stop()
-                    container.remove()
+def reset_to_initial():
+    """
+    Resets the system to its initial state.
+    """
+    global logged_in
+    logged_in = False
+    logging.info("System reset to INIT state.")
 
-            shutdown_thread = threading.Thread(target=self.delayed_self_shutdown(last_container_id))
-            shutdown_thread.start()
 
-        except Exception as e:
-            error_message = f"Error during shutdown: {e}"
-            print(error_message)
-            self.wfile.write(error_message.encode("utf-8"))
+def delayed_self_shutdown(container_id):
+    """
+    Delays shutting down the current container.
+    """
+    time.sleep(2)
+    subprocess.Popen(["./stop_self.sh", container_id])
 
-# Define the server address and port
-server_address = ('', 8199)  # Listen on all available IP addresses, port 8199
-httpd = HTTPServer(server_address, MyHandler)
 
-print("Serving on port 8199...")
-# Start the HTTP server
-httpd.serve_forever()
+# Run the Flask app
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=8199)
