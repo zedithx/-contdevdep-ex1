@@ -12,6 +12,7 @@ def reset_state():
     requests.put(f"{BASE_URL}/state", data="INIT", auth=HTTPBasicAuth(USERNAME, PASSWORD))
     yield
 
+
 class TestPutState:
     """
     PUT /state (payload “INIT”, “PAUSED”, “RUNNING”, “SHUTDOWN”)
@@ -58,12 +59,26 @@ class TestGetState:
         assert response.status_code == 200
         assert response.text == "INIT"
 
+    def test_get_state_log(self, reset_state):
+        """
+        GET /run-log (as text/plain)
+        Get information about state changes
+        Example response:
+        2023-11-01T06.35:01.380Z: INIT->RUNNING
+        2023-11-01T06:40:01.373Z: RUNNING->PAUSED
+        2023-11-01T06:40:01.373Z: PAUSET->RUNNING
+        """
+        requests.put(f"{BASE_URL}/state", data="RUNNING", auth=HTTPBasicAuth(USERNAME, PASSWORD))
+        requests.put(f"{BASE_URL}/state", data="PAUSED", auth=HTTPBasicAuth(USERNAME, PASSWORD))
+        requests.put(f"{BASE_URL}/state", data="RUNNING", auth=HTTPBasicAuth(USERNAME, PASSWORD))
 
-"""
-GET /run-log (as text/plain)
-Get information about state changes
-Example response:
-2023-11-01T06.35:01.380Z: INIT->RUNNING
-2023-11-01T06:40:01.373Z: RUNNING->PAUSED
-2023-11-01T06:40:01.373Z: PAUSET->RUNNING
-"""
+        # Get the run-log
+        response = requests.get(f"{BASE_URL}/run-log", auth=HTTPBasicAuth(USERNAME, PASSWORD))
+        assert response.status_code == 200
+
+        # Validate log entries
+        run_log = response.text.splitlines()
+        assert len(run_log) == 3
+        assert "INIT->RUNNING" in run_log[0]
+        assert "RUNNING->PAUSED" in run_log[1]
+        assert "PAUSED->RUNNING" in run_log[2]
