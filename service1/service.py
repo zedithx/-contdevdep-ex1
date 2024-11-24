@@ -12,10 +12,11 @@ app = Flask(__name__)
 
 # Configure logging
 logging.basicConfig(
-    filename='status.log',
-    filemode='a',
     format='%(asctime)s: %(message)s',
-    level=logging.INFO
+    level=logging.INFO,
+    handlers=[
+        logging.StreamHandler()  # Log to stdout
+    ]
 )
 
 # Global state
@@ -27,19 +28,17 @@ logged_in = False
 @app.route('/state', methods=['PUT'])
 def update_state():
     global state, state_log
-
     # Read the new state from the request body
+    logging.info(request.data)
     new_state = request.data.decode('utf-8')
-    logging.info(f"Received state change request: {new_state}")
 
     # Validate the new state
     if new_state not in ["INIT", "PAUSED", "RUNNING", "SHUTDOWN"]:
-        return jsonify({"error": "Invalid state"}), 400
+        return jsonify({"error": new_state}), 400
 
     # Update the state
     if new_state != state:
-        state_log.append(f"{state} -> {new_state}")
-        logging.info(f"State transition: {state} -> {new_state}")
+        state_log.append(f"{state}->{new_state}")
         state = new_state
 
         # Handle state-specific actions
