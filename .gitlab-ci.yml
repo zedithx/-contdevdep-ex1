@@ -22,7 +22,7 @@ job_test:
 job_deploy:
   stage: deploy
   only:
-    - main
+    - project
   script:
     - echo "Deploying to production environment"
 #    SSH into EC2/cloud instance
