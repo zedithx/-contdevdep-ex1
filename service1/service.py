@@ -1,5 +1,5 @@
 import requests
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, make_response
 import logging
 import docker
 import subprocess
@@ -56,18 +56,25 @@ def update_state():
 def get_state():
     """
     GET /state
-    Returns the current state.
+    Returns the current state as plain text.
     """
-    return jsonify({"state": state}), 200
+    global state
+    logging.info(state)
+    response = make_response(state)
+    response.headers['Content-Type'] = 'text/plain'
+    return response
 
 
 @app.route('/run-log', methods=['GET'])
 def get_run_log():
     """
     GET /run-log
-    Returns the state transition log.
+    Returns the state transition log as plain text.
     """
-    return jsonify({"log": state_log}), 200
+    # Convert the log (list) to a plain text string
+    global state_log
+    log_as_text = "\n".join(state_log)  # Join each log entry with a newline
+    return log_as_text, 200, {'Content-Type': 'text/plain'}
 
 
 @app.route('/request', methods=['GET'])

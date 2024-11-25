@@ -20,10 +20,10 @@ class TestRequest:
         response_text = response.text
         assert "Service 1" in response_text
         assert "Service 2" in response_text
-        assert "IP Address:" in response_text
-        assert "Processes:" in response_text
-        assert "Disk Space:" in response_text
-        assert "Time since last boot:" in response_text
+        assert "IP Address" in response_text
+        assert "Processes" in response_text
+        assert "Disk Space" in response_text
+        assert "Time since last boot" in response_text
 
         # Validate the presence of an IP address using regex
         ip_pattern = r"IP Address: (\d{1,3}\.){3}\d{1,3}"

@@ -27,26 +27,30 @@ class TestPutState:
     def test_put_state_running(self, reset_state):
         response = requests.put(f"{BASE_URL}/state", data="RUNNING", auth=HTTPBasicAuth(USERNAME, PASSWORD))
         assert response.status_code == 200
-        state = response.text
-        assert state == "RUNNING"
+        response_json = response.json()  # Convert response to JSON
+        assert response_json["message"] == "State updated to RUNNING"
 
     def test_put_state_init(self, reset_state):
         response = requests.put(f"{BASE_URL}/state", data="INIT", auth=HTTPBasicAuth(USERNAME, PASSWORD))  # No state change
         assert response.status_code == 200  # Should not trigger an error
-        state = response.text
-        assert state == "INIT"
+        response_json = response.json()  # Convert response to JSON
+        assert response_json["message"] == "State updated to INIT"
 
     def test_put_state_paused(self, reset_state):
         response = requests.put(f"{BASE_URL}/state", data="PAUSED", auth=HTTPBasicAuth(USERNAME, PASSWORD))  # No state change
         assert response.status_code == 200  # Should not trigger an error
-        state = response.text
-        assert state == "PAUSED"
+        response_json = response.json()
+        assert response_json["message"] == "State updated to PAUSED"
+
+    def test_failed_authentication(self, reset_state):
+        response = requests.put(f"{BASE_URL}/state", data="RUNNING")
+        assert response.status_code == 401
 
     def test_put_state_shutdown(self, reset_state):
         response = requests.put(f"{BASE_URL}/state", data="SHUTDOWN", auth=HTTPBasicAuth(USERNAME, PASSWORD))
         assert response.status_code == 200
-        state = response.text
-        assert state == "SHUTDOWN"
+        response_json = response.json()
+        assert response_json["message"] == "State updated to SHUTDOWN"
 
 
 class TestGetState:
