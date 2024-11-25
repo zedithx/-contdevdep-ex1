@@ -8,6 +8,9 @@ import threading
 import time
 
 # Initialize Flask app
+from utils.state_management import StateChange
+from utils.time_format import format_log_entry
+
 app = Flask(__name__)
 
 # Configure logging
@@ -15,19 +18,17 @@ logging.basicConfig(
     format='%(asctime)s: %(message)s',
     level=logging.INFO,
     handlers=[
-        logging.StreamHandler()  # Log to stdout
+        logging.StreamHandler(),  # Log to stdout
+        logging.FileHandler("status.log") # Log to my status.log file
     ]
 )
 
-# Global state
-state = "INIT"
-state_log = []
-logged_in = False
-
-
 @app.route('/state', methods=['PUT'])
 def update_state():
-    global state, state_log
+    # Define file paths in the shared volume
+    state_file_path = "/shared-data/state.txt"
+    state_log_file_path = "/shared-data/state_log.txt"
+
     # Read the new state from the request body
     logging.info(request.data)
     new_state = request.data.decode('utf-8')
@@ -36,18 +37,32 @@ def update_state():
     if new_state not in ["INIT", "PAUSED", "RUNNING", "SHUTDOWN"]:
         return jsonify({"error": new_state}), 400
 
-    # Update the state
+    # Read the current state from the volume
+    with open(state_file_path, "r") as f:
+        state = f.read()
+        if not state:
+            state = "INIT"
+
+    # Update the state if it has changed
     if new_state != state:
-        state_log.append(f"{state}->{new_state}")
-        state = new_state
+        # Update the state log
+        log_entry = format_log_entry(state, new_state)
+        with open(state_log_file_path, "a") as log_file:
+            log_file.write(log_entry + "\n")
 
-        # Handle state-specific actions
+        # Update the state file
+        with open(state_file_path, "w") as state_file:
+            state_file.write(new_state)
+
+        # Perform state-specific actions
         if new_state == "SHUTDOWN":
-            handle_stop()
+            state_handler = StateChange()
+            state_handler.handle_stop()
         elif new_state == "INIT":
-            reset_to_initial()
+            state_handler = StateChange()
+            state_handler.reset_to_initial()
 
-        return jsonify({"message": f"State updated to {state}"}), 200
+        return jsonify({"message": f"State updated to {new_state}"}), 200
     else:
         return jsonify({"message": "No change in state"}), 200
 
@@ -58,12 +73,19 @@ def get_state():
     GET /state
     Returns the current state as plain text.
     """
-    global state
-    logging.info(state)
+    state_file_path = "/shared-data/state.txt"
+    # Read the state from the file
+    with open(state_file_path, "r") as state_file:
+        state = state_file.read().strip()  # Remove any trailing newlines or spaces
+        if not state:
+            state = "INIT"
+    # Log the state
+    logging.info(f"Current state: {state}")
+
+    # Return the state as plain text
     response = make_response(state)
     response.headers['Content-Type'] = 'text/plain'
     return response
-
 
 @app.route('/run-log', methods=['GET'])
 def get_run_log():
@@ -72,9 +94,12 @@ def get_run_log():
     Returns the state transition log as plain text.
     """
     # Convert the log (list) to a plain text string
-    global state_log
-    log_as_text = "\n".join(state_log)  # Join each log entry with a newline
-    return log_as_text, 200, {'Content-Type': 'text/plain'}
+    state_log_file_path = "/shared-data/state_log.txt"
+    with open(state_log_file_path, "r") as state_log_file:
+        state_log = state_log_file.read()  # Remove any trailing newlines or spaces
+        if not state_log:
+            state_log = "There is no state log yet. No changes were made to the state since the uptime of the service"
+    return state_log, 200, {'Content-Type': 'text/plain'}
 
 
 @app.route('/request', methods=['GET'])
@@ -106,49 +131,6 @@ def handle_request():
     except Exception as e:
         logging.error(f"Error in /request: {str(e)}")
         return jsonify({"error": "Failed to fetch data"}), 500
-
-
-def handle_stop():
-    """
-    Shuts down all containers except the current one.
-    """
-    logging.info("Handling system shutdown...")
-    try:
-        client = docker.from_env()
-        current_instance = socket.gethostname()
-        last_container_id = None
-
-        for container in client.containers.list():
-            if "service1" in container.name and container.attrs['Config']['Hostname'] == current_instance:
-                last_container_id = container.id
-                continue
-            else:
-                container.stop()
-                container.remove()
-
-        # Schedule self-shutdown
-        threading.Thread(target=delayed_self_shutdown, args=(last_container_id,)).start()
-        logging.info("Containers shut down.")
-    except Exception as e:
-        logging.error(f"Error during shutdown: {str(e)}")
-
-
-def reset_to_initial():
-    """
-    Resets the system to its initial state.
-    """
-    global logged_in
-    logged_in = False
-    logging.info("System reset to INIT state.")
-
-
-def delayed_self_shutdown(container_id):
-    """
-    Delays shutting down the current container.
-    """
-    time.sleep(2)
-    subprocess.Popen(["./stop_self.sh", container_id])
-
 
 # Run the Flask app
 if __name__ == '__main__':

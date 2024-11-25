@@ -16,6 +16,8 @@ services:
   service1:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - ./service1/shared-data:/shared-data
+      - ./service1/status.log:/status.log
     # Define which docker file to use
     build: ./service1
     # Map inside port to outside port
