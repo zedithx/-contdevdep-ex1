@@ -1,13 +1,10 @@
-import requests
-from flask import Flask, request, jsonify, make_response
-import logging
-import docker
-import subprocess
-import socket
-import threading
-import time
+import os
 
-# Initialize Flask app
+import requests
+import logging
+import subprocess
+
+from flask import Flask, request, jsonify, make_response
 from utils.state_management import StateChange
 from utils.time_format import format_log_entry
 
@@ -38,13 +35,25 @@ def update_state():
         return jsonify({"error": new_state}), 400
 
     # Read the current state from the volume
-    with open(state_file_path, "r") as f:
-        state = f.read()
-        if not state:
-            state = "INIT"
+    if not os.path.exists(state_file_path):
+        logging.info("Making state file...")
+        with open(state_file_path, "a") as state_file:
+            pass  # Create the file if it does not exist
+        state = "INIT"
+
+    else:
+        with open(state_file_path, "r") as f:
+            state = f.read()
+            if not state:
+                state = "INIT"
 
     # Update the state if it has changed
     if new_state != state:
+        # Ensure the state log file exists
+        if not os.path.exists(state_log_file_path):
+            with open(state_log_file_path, "a") as log_file:
+                pass  # Create the file if it does not exist
+
         # Update the state log
         log_entry = format_log_entry(state, new_state)
         with open(state_log_file_path, "a") as log_file:
@@ -55,12 +64,20 @@ def update_state():
             state_file.write(new_state)
 
         # Perform state-specific actions
+        # SHUTDOWN
         if new_state == "SHUTDOWN":
             state_handler = StateChange()
             state_handler.handle_stop()
+        # INIT
         elif new_state == "INIT":
             state_handler = StateChange()
-            state_handler.reset_to_initial()
+            state_handler.handle_init()
+        # RUNNING
+        elif new_state == "RUNNING":
+            pass
+        # PAUSED
+        else:
+            pass
 
         return jsonify({"message": f"State updated to {new_state}"}), 200
     else:

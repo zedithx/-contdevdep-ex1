@@ -13,8 +13,9 @@ class StateChange:
     # STOP handler
     def handle_stop(self):
         """
-        Shuts down all containers except the current one.
+        Shuts down all containers except the current one. Set the state back to init after shutdown success
         """
+        state_file_path = "/shared-data/state.txt"
         logging.info("Handling system shutdown...")
         try:
             # Get the hostname of the current container
@@ -34,12 +35,16 @@ class StateChange:
                     logging.info(f"Removing container: {container.name}")
                     container.remove()
 
+
             if last_container_id:
                 # Schedule self-shutdown
                 shutdown_thread = threading.Thread(
                     target=self.delayed_self_shutdown, args=(last_container_id,)
                 )
                 shutdown_thread.start()
+            # Lastly, set the state back to INIT
+            with open(state_file_path, "w") as state_file:
+                state_file.write("INIT")
 
             logging.info("All containers shut down successfully.")
         except Exception as e:
@@ -60,7 +65,12 @@ class StateChange:
             logging.error(f"Error during self-shutdown: {str(e)}")
 
     # INIT handler
-    def reset_to_initial(self):
+    def handle_init(self):
         """
-        Resets the system to its initial state.
+        Require login again
         """
+        pass
+
+    # PAUSED handler
+    def handle_pause(self):
+        """"""

@@ -1,3 +1,4 @@
+import json
 import re
 
 import pytest
@@ -7,6 +8,7 @@ from requests.auth import HTTPBasicAuth
 BASE_URL = "http://localhost:8197"
 USERNAME = "user1"
 PASSWORD = "Password1"
+
 
 class TestRequest:
     def test_request(self):
@@ -25,9 +27,12 @@ class TestRequest:
         assert "Disk Space" in response_text
         assert "Time since last boot" in response_text
 
+        # Extract the IP Address
+        ip_address = json.loads(response_text).get("Service 1", {}).get("IP Address", None)
+
         # Validate the presence of an IP address using regex
-        ip_pattern = r"IP Address: (\d{1,3}\.){3}\d{1,3}"
-        assert re.search(ip_pattern, response_text), "IP Address not found in response"
+        ip_pattern = r"^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$"
+        assert re.match(ip_pattern, ip_address), f"Invalid IP Address: {ip_address}"
 
         # Validate that uptime includes "minutes" or "hours"
         assert "minutes" in response_text or "hours" in response_text, "Uptime not in expected format"
