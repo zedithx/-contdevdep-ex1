@@ -4,7 +4,7 @@ import requests
 import logging
 import subprocess
 
-from flask import Flask, request, jsonify, make_response
+from flask import Flask, request, jsonify, make_response, Response
 from utils.state_management import StateChange
 from utils.time_format import format_log_entry
 
@@ -20,8 +20,36 @@ logging.basicConfig(
     ]
 )
 
+@app.route('/check_pause', methods=['GET'])
+def check_pause():
+    # Example: Check Authorization header
+    state_file_path = "/shared-data/state.txt"
+    # Read the current state from the volume
+    if not os.path.exists(state_file_path):
+        logging.info("Making state file...")
+        with open(state_file_path, "a") as state_file:
+            pass  # Create the file if it does not exist
+        state = "INIT"
+
+    else:
+        with open(state_file_path, "r") as f:
+            state = f.read()
+            if not state:
+                state = "INIT"
+    if state == "PAUSED":
+        return Response(status=401)  # Authorized
+    return Response(status=200)  # Forbidden
+
 @app.route('/state', methods=['PUT'])
 def update_state():
+    """
+    PUT /state
+    Makes request to change the state of machine.
+    PAUSED = the system does not response to requests
+    INIT = need login to change state from this
+    RUNNING = Respond to requests normally
+    SHUTDOWN = Shutdown containers
+    """
     # Define file paths in the shared volume
     state_file_path = "/shared-data/state.txt"
     state_log_file_path = "/shared-data/state_log.txt"
