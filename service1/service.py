@@ -22,7 +22,6 @@ logging.basicConfig(
 
 @app.route('/check_pause', methods=['GET'])
 def check_pause():
-    # Example: Check Authorization header
     state_file_path = "/shared-data/state.txt"
     # Read the current state from the volume
     if not os.path.exists(state_file_path):
@@ -39,6 +38,27 @@ def check_pause():
     if state == "PAUSED":
         return Response(status=401)  # Authorized
     return Response(status=200)  # Forbidden
+
+@app.route('/check_state', methods=['GET'])
+def check_state():
+    state_file_path = "/shared-data/state.txt"
+    # Read the current state from the volume
+    if not os.path.exists(state_file_path):
+        logging.info("Making state file...")
+        with open(state_file_path, "a") as state_file:
+            pass  # Create the file if it does not exist
+        state = "INIT"
+
+    else:
+        with open(state_file_path, "r") as f:
+            state = f.read()
+            if not state:
+                state = "INIT"
+    if state == "INIT":
+        auth = request.authorization
+        if not auth or not (auth.username == "user1" and auth.password == "Password1"):
+            return Response("Unauthorized", status=401)
+    return Response("OK", status=200)
 
 @app.route('/state', methods=['PUT'])
 def update_state():
