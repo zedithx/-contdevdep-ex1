@@ -35,4 +35,4 @@ class TestRequest:
         assert re.match(ip_pattern, ip_address), f"Invalid IP Address: {ip_address}"
 
         # Validate that uptime includes "minutes" or "hours"
-        assert "minutes" in response_text or "hours" in response_text, "Uptime not in expected format"
+        assert "minute" in response_text or "hour" in response_text, "Uptime not in expected format"
