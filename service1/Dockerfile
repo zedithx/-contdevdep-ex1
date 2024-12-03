@@ -15,6 +15,8 @@ RUN apt-get update && apt-get install -y docker.io procps
 # Install any needed dependencies specified in requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
+RUN pip list
+
 # Run app.py when the container launches
 CMD ["python", "service.py"]
 
