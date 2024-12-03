@@ -13,7 +13,7 @@ linting:
   stage: lint
   image: python:3.9-slim
   script:
-    - pip install pylint -r requirements.txt
+    - pip install pylint -r service1/requirements.txt
     - pylint service1/
 
 job_test:
