@@ -88,6 +88,8 @@ class TestGetState:
         response = requests.get(f"{BASE_URL}/state")
         assert response.status_code == 401
 
+
+class TestGetStateLog:
     @responses.activate
     def test_get_state_log_mocked(self, reset_state):
         responses.assert_all_requests_are_fired = True
