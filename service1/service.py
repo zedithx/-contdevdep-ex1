@@ -1,8 +1,11 @@
+"""
+This module contains the api endpoints to serve changes of state or getting of states
+"""
 import os
 
-import requests
 import logging
 import subprocess
+import requests
 
 from flask import Flask, request, jsonify, make_response, Response
 from utils.state_management import StateChange
@@ -22,16 +25,17 @@ logging.basicConfig(
 
 @app.route('/check_pause', methods=['GET'])
 def check_pause():
+    """Checks if the system is in paused state. if it is, all requests should not go through"""
     state_file_path = "/shared-data/state.txt"
     # Read the current state from the volume
     if not os.path.exists(state_file_path):
         logging.info("Making state file...")
-        with open(state_file_path, "a") as state_file:
+        with open(state_file_path, "a", encoding="utf-8"):
             pass  # Create the file if it does not exist
         state = "INIT"
 
     else:
-        with open(state_file_path, "r") as f:
+        with open(state_file_path, "r", encoding="utf-8") as f:
             state = f.read()
             if not state:
                 state = "INIT"
@@ -41,16 +45,18 @@ def check_pause():
 
 @app.route('/check_state', methods=['GET'])
 def check_state():
+    """Check if the state is INIT. If state is init when attempting to
+    change state, auth is required"""
     state_file_path = "/shared-data/state.txt"
     # Read the current state from the volume
     if not os.path.exists(state_file_path):
         logging.info("Making state file...")
-        with open(state_file_path, "a") as state_file:
+        with open(state_file_path, "a", encoding="utf-8"):
             pass  # Create the file if it does not exist
         state = "INIT"
 
     else:
-        with open(state_file_path, "r") as f:
+        with open(state_file_path, "r", encoding="utf-8") as f:
             state = f.read()
             if not state:
                 state = "INIT"
@@ -85,12 +91,12 @@ def update_state():
     # Read the current state from the volume
     if not os.path.exists(state_file_path):
         logging.info("Making state file...")
-        with open(state_file_path, "a") as state_file:
+        with open(state_file_path, "a", encoding="utf-8"):
             pass  # Create the file if it does not exist
         state = "INIT"
 
     else:
-        with open(state_file_path, "r") as f:
+        with open(state_file_path, "r", encoding="utf-8") as f:
             state = f.read()
             if not state:
                 state = "INIT"
@@ -99,16 +105,16 @@ def update_state():
     if new_state != state:
         # Ensure the state log file exists
         if not os.path.exists(state_log_file_path):
-            with open(state_log_file_path, "a") as log_file:
+            with open(state_log_file_path, "a", encoding="utf-8") as log_file:
                 pass  # Create the file if it does not exist
 
         # Update the state log
         log_entry = format_log_entry(state, new_state)
-        with open(state_log_file_path, "a") as log_file:
+        with open(state_log_file_path, "a", encoding="utf-8") as log_file:
             log_file.write(log_entry + "\n")
 
         # Update the state file
-        with open(state_file_path, "w") as state_file:
+        with open(state_file_path, "w", encoding="utf-8") as state_file:
             state_file.write(new_state)
 
         # Perform state-specific actions
@@ -116,20 +122,10 @@ def update_state():
         if new_state == "SHUTDOWN":
             state_handler = StateChange()
             state_handler.handle_stop()
-        # INIT
-        elif new_state == "INIT":
-            state_handler = StateChange()
-            state_handler.handle_init()
-        # RUNNING
-        elif new_state == "RUNNING":
-            pass
-        # PAUSED
-        else:
-            pass
+        # If future handlers, put here
 
         return jsonify({"message": f"State updated to {new_state}"}), 200
-    else:
-        return jsonify({"message": "No change in state"}), 200
+    return jsonify({"message": "No change in state"}), 200
 
 
 @app.route('/state', methods=['GET'])
@@ -140,12 +136,12 @@ def get_state():
     """
     state_file_path = "/shared-data/state.txt"
     # Read the state from the file
-    with open(state_file_path, "r") as state_file:
+    with open(state_file_path, "r", encoding="utf-8") as state_file:
         state = state_file.read().strip()  # Remove any trailing newlines or spaces
         if not state:
             state = "INIT"
     # Log the state
-    logging.info(f"Current state: {state}")
+    logging.info("Current state: %s", state)
 
     # Return the state as plain text
     response = make_response(state)
@@ -160,10 +156,11 @@ def get_run_log():
     """
     # Convert the log (list) to a plain text string
     state_log_file_path = "/shared-data/state_log.txt"
-    with open(state_log_file_path, "r") as state_log_file:
+    with open(state_log_file_path, "r", encoding="utf-8") as state_log_file:
         state_log = state_log_file.read()  # Remove any trailing newlines or spaces
         if not state_log:
-            state_log = "There is no state log yet. No changes were made to the state since the uptime of the service"
+            state_log = "There is no state log yet. No changes were made to the state" \
+                        " since the uptime of the service"
     return state_log, 200, {'Content-Type': 'text/plain'}
 
 
@@ -175,11 +172,13 @@ def handle_request():
     """
     try:
         # Simulate a request to another service
-        service2_response = requests.get('http://service2:8080/').text
+        service2_response = requests.get('http://service2:8080/', timeout=5).text
 
         # Gather system information
-        processes = subprocess.check_output("ps -ax", shell=True).decode("utf-8")
-        disk_space = subprocess.check_output("df -h /", shell=True).decode("utf-8").splitlines()[1].split()[3]
+        processes = subprocess.check_output("ps -ax", shell=True)\
+            .decode("utf-8")
+        disk_space = subprocess.check_output("df -h /", shell=True)\
+        .decode("utf-8").splitlines()[1].split()[3]
         uptime = subprocess.check_output("uptime -p", shell=True).decode("utf-8").strip()
         container_ip = subprocess.check_output("hostname -I", shell=True).decode("utf-8").strip()
 
@@ -193,9 +192,22 @@ def handle_request():
             "Service 2": service2_response
         }
         return jsonify(response_data), 200
-    except Exception as e:
-        logging.error(f"Error in /request: {str(e)}")
-        return jsonify({"error": "Failed to fetch data"}), 500
+
+    except requests.exceptions.RequestException as e:
+        logging.error("Network error in /request: %s", str(e))
+        return jsonify({"error": "Failed to contact Service 2"}), 502
+
+    except subprocess.CalledProcessError as e:
+        logging.error("Subprocess error: %s", str(e))
+        return jsonify({"error": "Failed to execute system command"}), 500
+
+    except Exception as e:          # pylint: disable=broad-exception-caught
+        # Exclude specific system-level exceptions
+        if isinstance(e, (SystemExit, KeyboardInterrupt)):
+            raise
+        # Log and respond for other unexpected exceptions
+        logging.error("Unexpected error in /request: %s", str(e))
+        return jsonify({"error": "An unexpected error occurred"}), 500
 
 # Run the Flask app
 if __name__ == '__main__':

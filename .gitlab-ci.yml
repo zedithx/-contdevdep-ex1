@@ -16,7 +16,8 @@ job_test:
     - docker-compose -f docker-compose.test.yml up -d
     - pip install pytest
     - pip install responses
-    - pytest
+    - pip install pylint
+    - pylint service1/ && pytest
   after_script:
     - docker-compose down
 
