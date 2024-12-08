@@ -4,9 +4,11 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
       - ./nginx/htpasswd:/etc/nginx/.htpasswd
-      - ./web:/usr/share/nginx/html
+      # Only mount the `web` directory for serving static files
+      - ./web:/usr/share/nginx/html:ro
     ports:
       - "8197:8197"
+      - "8198:8198"
     depends_on:
       - service1
       - service2
