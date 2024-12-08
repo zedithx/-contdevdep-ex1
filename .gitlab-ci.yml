@@ -1,0 +1,40 @@
+stages:
+  - build
+  - lint
+  - tests
+  - deploy
+
+before_script:
+  - export PATH=$PATH:/home/gitlab-runner/.local/bin
+
+job_build:
+  stage: build
+  script:
+    - docker-compose build
+
+linting:
+  stage: lint
+  image: python:3.9-slim
+  script:
+    - pip install pylint -r service1/requirements.txt
+    - pylint service1/
+
+job_test:
+  stage: tests
+  dependencies:
+    - job_build
+  script:
+    - docker-compose -f docker-compose.test.yml up -d
+    - pip install pytest
+    - pip install responses
+    - pytest
+  after_script:
+    - docker-compose down
+
+job_deploy:
+  stage: deploy
+  only:
+    - project
+  script:
+    - echo "Deploying to production environment"
+    - docker-compose up -d

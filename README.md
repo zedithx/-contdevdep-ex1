@@ -1,11 +1,13 @@
 # Containerized Service Assignment
 
-This project consists of two services running in separate Docker containers that demonstrate containerized microservices communication. The services collect container-specific information such as IP address, running processes, disk space, and uptime. One service exposes an HTTP server to provide this data externally, while the other remains hidden but provides internal data to the first service. Both services should startup and stop together via docker compose.
+This project sets up a multi-container application using Docker and Docker Compose, featuring an NGINX web server for
+load balancing and reverse proxying, containerized services, and network configurations.
 
 ## Project Structure
 
-- **Service 1**: Exposed as a public HTTP server on port `8199`, collects and exposes its own container information as well as data from Service 2.
+- **Service 1**: Hidden HTTP server on port `8199`, collects and exposes its own container information as well as data from Service 2 to the Nginx Webserver.
 - **Service 2**: Runs privately within the Docker network and provides its container information to Service 1 when requested.
+- **Nginx Service**: Acts as a webserver, reverse proxy and load balancer on the exposed port `8081` 
 
 ### Features
 
@@ -16,12 +18,19 @@ This project consists of two services running in separate Docker containers that
   - **Time Since Last Boot** (`uptime -p`)
   
 - **Service 1**:
-  - Runs an HTTP server on port `8199` to serve its own container data.
+  - 3 Instances to be load balanced
+  - Runs a HTTP server on inner port `8199` to serve its own container data.
   - Requests and displays information from **Service 2**.
+  - Helps to stop the containers from running and exit system on "STOP" button
   
 - **Service 2**:
   - Collects the same container information but is only accessible by **Service 1** over an internal network.
   - Does not expose any public port.
+
+- **Nginx Service**:
+  - Starts webserver on the only exposed port 8081
+  - Retrieves data from appropriate service 1 in round robin fashion on "REQUEST" button 
+  - Shuts down system and containers on the "STOP" button
 
 ## Prerequisites
 
@@ -39,9 +48,8 @@ This project consists of two services running in separate Docker containers that
     ```bash
     docker-compose up --build
     ```
-3. **Make a curl request to service 1 exposed on port 8199**
-    ```bash
-    curl http://localhost:8199
-    ```
-4. **View the returned information of both service containers** <br></br>
-5. **You can double check to see if service 2 on port 8080 is exposed publicly. You should not be able to access it**
+3. **Open up the webpage served by Nginx on localhost:8081**
+4. **Enter the authentication details based on the login.txt**
+5. **You can now test the request button which will populate the text area with service 1 & service 2 response**
+6. **You can also test the stop button which stops all containers**
+7. **These requests to service1 are handled in a round robin fashion by the nginx server as a load balancer**

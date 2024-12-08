@@ -1,0 +1,42 @@
+services:
+  gateway:
+    image: nginx:latest
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/htpasswd:/etc/nginx/.htpasswd
+      - ./web:/usr/share/nginx/html
+    ports:
+      - "8197:8197"
+    depends_on:
+      - service1
+      - service2
+    networks:
+      - app-network
+
+  service1:
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /dev/shm:/shared-data
+    # Define which docker file to use
+    build: ./service1
+    # Map inside port to outside port
+    expose:
+      - "8199"
+    # Ensure Service2 is started before Service1
+    depends_on:
+      - service2
+    networks:
+      - app-network
+    deploy:
+      replicas: 3
+
+  service2:
+    # Define which docker file to use
+    build: ./service2
+    expose:
+      - "8080"
+    networks:
+      - app-network
+networks:
+  app-network:
+    driver: bridge

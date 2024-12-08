@@ -1,8 +1,12 @@
-CONTAINER ID   IMAGE                     COMMAND               CREATED         STATUS         PORTS                    NAMES
-ed20f0c0f81e   contdevdep-ex1-service1   "python service.py"   4 minutes ago   Up 4 minutes   0.0.0.0:8199->8199/tcp   contdevdep-ex1-service1-1
-cab1f4e84759   contdevdep-ex1-service2   "ruby service.rb"     4 minutes ago   Up 4 minutes   8080/tcp                 contdevdep-ex1-service2-1
-NETWORK ID     NAME                     DRIVER    SCOPE
-589a14b91562   bridge                   bridge    local
-ebc5d5fb4afc   contdevdep-ex1_default   bridge    local
-6de5f430880b   host                     host      local
-fecf22cc0fc6   none                     null      local
+CONTAINER ID   IMAGE                     COMMAND                  CREATED              STATUS              PORTS                            NAMES
+8a02100223d1   nginx:latest              "/docker-entrypoint.…"   About a minute ago   Up About a minute   80/tcp, 0.0.0.0:8197->8197/tcp   contdevdep-ex1-gateway-1
+206cef14ef0e   contdevdep-ex1-service1   "python service.py"      About a minute ago   Up About a minute   8199/tcp                         contdevdep-ex1-service1-1
+ab93b27debcc   contdevdep-ex1-service1   "python service.py"      About a minute ago   Up About a minute   8199/tcp                         contdevdep-ex1-service1-3
+eb459daf75ad   contdevdep-ex1-service1   "python service.py"      About a minute ago   Up About a minute   8199/tcp                         contdevdep-ex1-service1-2
+6a0c3a777ca9   contdevdep-ex1-service2   "ruby service.rb"        About a minute ago   Up About a minute   8080/tcp                         contdevdep-ex1-service2-1
+
+NETWORK ID     NAME                         DRIVER    SCOPE
+58d902144f2e   bridge                       bridge    local
+135768e9ed7f   contdevdep-ex1_app-network   bridge    local
+6de5f430880b   host                         host      local
+fecf22cc0fc6   none                         null      local
