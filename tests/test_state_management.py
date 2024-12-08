@@ -92,6 +92,9 @@ class TestGetState:
 class TestGetStateLog:
     @responses.activate
     def test_get_state_log_mocked(self, reset_state):
+        """
+        GET /run-log (as text/plain)
+        """
         responses.assert_all_requests_are_fired = True
         responses.add(
             responses.GET,

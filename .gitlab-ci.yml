@@ -34,5 +34,4 @@ job_deploy:
     - project
   script:
     - echo "Deploying to production environment"
-#    SSH into EC2/cloud instance
     - docker-compose up -d
