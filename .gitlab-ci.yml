@@ -4,6 +4,9 @@ stages:
   - tests
   - deploy
 
+before_script:
+  - export PATH=$PATH:/home/gitlab-runner/.local/bin
+
 job_build:
   stage: build
   script:
@@ -13,7 +16,6 @@ linting:
   stage: lint
   image: python:3.9-slim
   script:
-    - export PATH=$PATH:/home/gitlab-runner/.local/bin
     - pip install pylint -r service1/requirements.txt
     - pylint service1/
 
