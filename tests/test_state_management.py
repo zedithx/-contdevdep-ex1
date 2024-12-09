@@ -40,9 +40,10 @@ class TestPutState:
 
     def test_put_state_paused(self, reset_state):
         response = requests.put(f"{BASE_URL}/state", data="PAUSED", auth=HTTPBasicAuth(USERNAME, PASSWORD))  # No state change
-        assert response.status_code == 200  # Should not trigger an error
+        assert response.status_code == 400  # Should not trigger an error
         response_json = response.json()
-        assert response_json["message"] == "State updated to PAUSED"
+        assert response_json["message"] == "State change to PAUSED is not allowed. " \
+                                           "Only changes in state to RUNNING are allowed"
 
     def test_init_failed_authentication(self, reset_state):
         """In INIT state, shouldn't work without authentication"""
@@ -60,9 +61,9 @@ class TestPutState:
 
     @patch("requests.put")
     def test_put_state_shutdown_mocked(self, mock_put, reset_state):
+        requests.put(f"{BASE_URL}/state", data="RUNNING", auth=HTTPBasicAuth(USERNAME, PASSWORD))
         mock_put.return_value.status_code = 200
         mock_put.return_value.json = lambda: {"message": "State updated to SHUTDOWN"}
-
         response = requests.put(f"{BASE_URL}/state", data="SHUTDOWN", auth=HTTPBasicAuth(USERNAME, PASSWORD))
         assert response.status_code == 200
         response_json = response.json()
@@ -84,6 +85,8 @@ class TestGetState:
         GET /state (as text/plain)
             Should not work when the system is paused
         """
+        # Need to put into running state first before pause
+        requests.put(f"{BASE_URL}/state", data="RUNNING", auth=HTTPBasicAuth(USERNAME, PASSWORD))
         requests.put(f"{BASE_URL}/state", data="PAUSED", auth=HTTPBasicAuth(USERNAME, PASSWORD))
         response = requests.get(f"{BASE_URL}/state")
         assert response.status_code == 401

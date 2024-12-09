@@ -23,6 +23,9 @@ logging.basicConfig(
     ]
 )
 
+# maps what states a state can transition into, shutdown not needed as its a final state
+STATE_DICT = {"INIT": ["RUNNING"], "RUNNING": ["INIT", "PAUSED", "SHUTDOWN"], "PAUSED": ["INIT", "PAUSED", "SHUTDOWN"]}
+
 @app.route('/check_pause', methods=['GET'])
 def check_pause():
     """Checks if the system is in paused state. if it is, all requests should not go through"""
@@ -103,6 +106,11 @@ def update_state():
 
     # Update the state if it has changed
     if new_state != state:
+        if new_state not in STATE_DICT[state]:
+            return jsonify({"message": f"State change to {new_state} is not allowed. "
+                                       f"Only changes in state to {','.join(STATE_DICT[state])}"
+                                       f" are allowed"}), 400
+
         # Ensure the state log file exists
         if not os.path.exists(state_log_file_path):
             with open(state_log_file_path, "a", encoding="utf-8") as log_file:
