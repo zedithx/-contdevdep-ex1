@@ -24,7 +24,8 @@ logging.basicConfig(
 )
 
 # maps what states a state can transition into, shutdown not needed as its a final state
-STATE_DICT = {"INIT": ["RUNNING"], "RUNNING": ["INIT", "PAUSED", "SHUTDOWN"], "PAUSED": ["INIT", "PAUSED", "SHUTDOWN"]}
+STATE_DICT = {"INIT": ["RUNNING"], "RUNNING": ["INIT", "PAUSED", "SHUTDOWN"],
+              "PAUSED": ["INIT", "PAUSED", "SHUTDOWN"]}
 
 @app.route('/check_pause', methods=['GET'])
 def check_pause():
