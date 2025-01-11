@@ -1,55 +1,78 @@
-# Containerized Service Assignment
+# Containerized Service Final Project
 
-This project sets up a multi-container application using Docker and Docker Compose, featuring an NGINX web server for
-load balancing and reverse proxying, containerized services, and network configurations.
+This project implements a containerized multi-service application extended with a CI/CD pipeline. It includes an API Gateway, monitoring, and a test-driven development approach.
+Both services are written in different languages.
 
-## Project Structure
+## Project Overview
 
-- **Service 1**: Hidden HTTP server on port `8199`, collects and exposes its own container information as well as data from Service 2 to the Nginx Webserver.
-- **Service 2**: Runs privately within the Docker network and provides its container information to Service 1 when requested.
-- **Nginx Service**: Acts as a webserver, reverse proxy and load balancer on the exposed port `8081` 
+- **Service 1**: Provides container-specific data and integrates with **Service 2**. Written in Python.
+- **Service 2**: Operates privately within the Docker network, supplying data to **Service 1**. Written in Ruby.
+- **API Gateway**: 
+  - Extended NGINX, functioning as a reverse proxy, load balancer, and API Gateway.
+  - Exposes REST APIs for system state management and monitoring.
 
-### Features
+## Features
 
-- Both services collect the following container-specific information:
-  - **IP Address**
-  - **Running Processes** (`ps -ax`)
-  - **Available Disk Space** (`df -h`)
-  - **Time Since Last Boot** (`uptime -p`)
-  
-- **Service 1**:
-  - 3 Instances to be load balanced
-  - Runs a HTTP server on inner port `8199` to serve its own container data.
-  - Requests and displays information from **Service 2**.
-  - Helps to stop the containers from running and exit system on "STOP" button
-  
-- **Service 2**:
-  - Collects the same container information but is only accessible by **Service 1** over an internal network.
-  - Does not expose any public port.
+### Core Features
+1. **Container Information**:
+   - IP Address
+   - Running Processes (`ps -ax`)
+   - Available Disk Space (`df -h`)
+   - Uptime (`uptime -p`)
+2. **System States**:
+   - `INIT`: Resets application to default state.
+   - `RUNNING`: Processes requests normally.
+   - `PAUSED`: Suspends request handling.
+   - `SHUTDOWN`: Stops all containers.
+3. **API Endpoints**:
+   - `PUT /state`: Transition system state.
+   - `GET /state`: Retrieve current state.
+   - `GET /request`: Perform load-balanced service requests.
+   - `GET /run-log`: Fetch state change logs.
+4. **Monitoring**:
+   - Displays service start time and request count since startup.
+5. **Web Interface**:
+   - Allows users to make the API calls on a GUI
 
-- **Nginx Service**:
-  - Starts webserver on the only exposed port 8081
-  - Retrieves data from appropriate service 1 in round robin fashion on "REQUEST" button 
-  - Shuts down system and containers on the "STOP" button
+### CI/CD Pipeline
+1. **GitLab CI**:
+   - Configured with `.gitlab-ci.yml` for Build, Test, and Deploy stages.
+2. **Test-Driven Development**:
+   - Tests implemented prior to feature development.
+   - Tests stored in `tests/` directory.
+3. **Pipeline Execution**:
+   - Automatically builds and deploys upon code pushes.
+
+### Optional Features Implemented
+- Static analysis tool - `pylint`.
+- Deployment to a virtual machine for external testing.
 
 ## Prerequisites
+- **Docker** and **Docker Compose** installed.
+- GitLab Runner registered and configured (if testing CI/CD pipeline)
+- Tools like `curl` or `Postman` for testing API endpoints.
+- Basic knowledge of CI/CD workflows and Docker.
 
-- **Docker** and **Docker Compose** installed on your machine.
-- Basic understanding of Docker, containers, and HTTP.
-
-## Setup
+## Setup Instructions
 
 1. **Clone the repository**:
    ```bash
-   git clone https://your-repository-url
-   cd your-repository-folder
-    ```
-2. **Build and start the containers up via docker-compose**:
-    ```bash
-    docker-compose up --build
-    ```
-3. **Open up the webpage served by Nginx on localhost:8081**
-4. **Enter the authentication details based on the login.txt**
-5. **You can now test the request button which will populate the text area with service 1 & service 2 response**
-6. **You can also test the stop button which stops all containers**
-7. **These requests to service1 are handled in a round robin fashion by the nginx server as a load balancer**
+   git clone -b project https://github.com/zedithx/contdevdep-ex
+   cd contdevdep-ex
+   ```
+
+2. **Build and start containers**:
+   ```bash
+   docker-compose build --no-cache
+   docker-compose up -d
+   ```
+
+3. **Using the WebUI**
+Placeholder
+
+
+4. **Calling the endpoints**
+
+**Note: Running in test environment**
+
+Please view the end report in the repository for more information and learning points
