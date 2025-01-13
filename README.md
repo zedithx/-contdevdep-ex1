@@ -1,7 +1,7 @@
 # Containerized Service Final Project
 
 This project implements a containerized multi-service application extended with a CI/CD pipeline. It includes an API Gateway, monitoring, and a test-driven development approach.
-Both services are written in different languages.
+Both services are written in different languages to demonstrate the capabilities of microservices.
 
 ## Project Overview
 
@@ -68,11 +68,20 @@ Both services are written in different languages.
    ```
 
 3. **Using the WebUI**
-Placeholder
+  1. Open up the webpage served by Nginx on localhost:8197
+  2. Enter the authentication details based on the login.txt
+  3. You can now test the request button which will populate the text area with service 1 & service 2 response
+  4. You can also test the stop button which stops all containers
+  5. These requests to service1 are handled in a round robin fashion by the nginx server as a load balancer
 
 
 4. **Calling the endpoints**
 
-**Note: Running in test environment**
+**Note: Running in test environment to test locally**
+Run this command instead. It saves data to a temporary volume instead.
+```bash
+docker-compose -f docker-compose.test.yml up -d
+pytest
+```
 
 Please view the end report in the repository for more information and learning points
