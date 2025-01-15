@@ -77,7 +77,7 @@ Both services are written in different languages to demonstrate the capabilities
 
 4. **Calling the endpoints**
 
-**Note: Running in test environment to test locally**
+**Note: Running in test environment to test locally** \n
 Run this command instead. It saves data to a temporary volume instead.
 ```bash
 docker-compose -f docker-compose.test.yml up -d
